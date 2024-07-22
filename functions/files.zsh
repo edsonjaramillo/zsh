@@ -6,35 +6,40 @@ download_and_extract_repo() {
     fi
     
     # Check if the URL ends with .git
-    if [[ "$repo_url" =~ \.git$ ]]; then
-        echo "Valid Git repository URL."
-    else
+    if [[ "$1" != *".git" ]]; then
         echo "Invalid Git repository URL. Please provide a URL ending with .git"
         return 1
     fi
     
+    # remove the .git extension
+    local repo_url=$(echo "$1" | sed 's/\.git$//')
+    
+    # check to make sure second argument is not empty
+    local branch="$2"
+    if [[ -z "$branch" ]]; then
+        echo "Error: Please provide a branch name."
+        return 1
+    fi
+    
+    # check to make sure third argument is not empty
+    local output_dir="$3"
+    if [[ -z "$output_dir" ]]; then
+        echo "Error: Please provide an output directory."
+        return 1
+    fi
     
     # Extract the repository name from the URL
-    local repo_url="$1"
-    local repo_name="${repo_url##*/}" # Extract everything after the last '/'
-    repo_name="${repo_name%.*}" # Remove .git if present
+    local repo_name=$(basename "$repo_url" .git)
     
-    # Prepare the temporary file name and the output directory
-    local temp_file="/tmp/${repo_name}.tar.gz"
+    # https://github.com/User/repo/archive/master.tar.gz
+    local repo_tarball_url="$repo_url/archive/$branch.tar.gz"
     
-    Download the archive
-    if curl -L "${repo_url}/archive/refs/heads/main.tar.gz" -o "$temp_file"; then
-        echo "Downloaded ${repo_name}.tar.gz successfully."
-    else
-        echo "Error: Failed to download ${repo_name}.tar.gz."
+    # Download the tarball and pipe it to tar
+    if ! curl -L "$repo_tarball_url" | tar -xz -C "$output_dir" --strip-components=1; then
+        echo "Error: Failed to download and extract the repository."
         return 1
     fi
     
-    # Extract the archive
-    if tar -xvf "$temp_file" -C ~ --strip-components=1; then
-        echo "Extracted ${repo_name}.tar.gz successfully."
-    else
-        echo "Error: Failed to extract ${repo_name}.tar.gz."
-        return 1
-    fi
+    # remove the tarball
+    rm -f "$output_dir/$branch.tar.gz"
 }
