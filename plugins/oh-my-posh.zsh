@@ -4,4 +4,4 @@ if [[ "$OSTYPE" == "linux-gnu" ]]; then
 fi
 
 # activate oh-my-posh
-eval "$(oh-my-posh init zsh --config ~/themes/default.omp.json)"
+eval "$(oh-my-posh init zsh --config $HOME/themes/default.omp.json)"
